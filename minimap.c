@@ -76,7 +76,7 @@ void affichertemps(int* tempsDebut)
     //Chargement police
  TTF_Font* police=NULL;
  police=TTF_OpenFont("police.ttf",32);
- SDL_Color couleurNoir={255,255,255};
+ SDL_Color couleurNoir={0,0,0};
 
     //Initialisation de la position du texte
  posTexte.x=0;
