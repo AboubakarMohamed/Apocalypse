@@ -1,92 +1,205 @@
+/**
+ *@file main.c
+ *@brief Testing program.
+ *@author Njanen Aurielle
+ *@version 0.1
+ *@date Apr 26, 2020
+ *
+ *Testing program for minimap
+ *
+ */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
-#include <SDL/SDL_ttf.h>
-#include <SDL/SDL_getenv.h>
 #include <SDL/SDL_mixer.h>
-#include "minimap.h"
-#include <string.h>
-#include <math.h>
+#include <SDL/SDL_ttf.h>
+#include "fonction.h"
 
-
-int LARGEUR_ECRAN=1000, HAUTEUR_ECRAN=480;
-int main ( int argc, char* argv[] )
-
+int main()
 {
-    Minimap m;
-    int continuer=1,tempsDebut=0;
-    int dimension=0;
-    char temps[]="";
-
+    int collision, distance = 100;
     SDL_Event event;
-    SDL_Init(SDL_INIT_VIDEO);
-TTF_Init();
-
-    SDL_Surface* ecran=NULL, *background_jeu=NULL, *background_joueur=NULL;
-    SDL_Rect posJoueur,posImg_Jeu;
-
-    ecran=SDL_SetVideoMode(LARGEUR_ECRAN, HAUTEUR_ECRAN,32, SDL_HWSURFACE| SDL_DOUBLEBUF | SDL_RESIZABLE) ;
-    SDL_WM_SetCaption("Skawel",NULL);
-
-    background_jeu=IMG_Load("background.bmp");
-    posImg_Jeu.x=0;
-    posImg_Jeu.y=0;
-
-    background_joueur=IMG_Load("rouge.bmp");
-    posJoueur.x=0;
-    posJoueur.y=(ecran->h)-100;
-
-
-    initmap(&m);
-
-    SDL_BlitSurface(background_jeu,NULL,ecran,&posImg_Jeu);
-    SDL_BlitSurface(background_joueur,NULL,ecran,&posJoueur);
-    afficherminimap(m,ecran);
-
-    tempsDebut=SDL_GetTicks();
-affichertemps(&tempsDebut);
-SDL_Flip(ecran);
-
-    while(continuer)
+    minimap m;
+    Personne p, pM, pMprochaine;
+    temps t;
+    SDL_Surface *screen = NULL, *imageDeFond = NULL, *masked = NULL, *chiffres[30];
+    SDL_Rect position_BG, position_chiffres , position_camera;
+    int longueurM = 8000, largeurM = 800, longueur = 800, largeur = 80, i = 0;
+    int redimensionnement =  distance * longueur / longueurM;
+    screen = SDL_SetVideoMode(1600, 800, 32, SDL_SWSURFACE | SDL_DOUBLEBUF | SDL_RESIZABLE);
+    TTF_Init();
+    if (screen == NULL)
     {
-        if(SDL_PollEvent(&event))
+        printf("ERREUR: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    position_BG.x = 0;
+    position_BG.y = 0;
+
+    imageDeFond = IMG_Load("map1.png");
+    int continuer = 1;
+    initmap(&m);
+    initialiser_temps(&t);
+    
+    masked = IMG_Load("map1_masked.png");
+
+    p.sprite = IMG_Load("Dot.png");
+    p.position_perso.x = 0;
+    p.position_perso.y = 40;
+
+    pM.sprite = IMG_Load("perso.png");
+    pM.position_perso.x = 0;
+    pM.position_perso.y = 550;
+
+    pMprochaine.position_perso.x = pM.position_perso.x;
+    pMprochaine.position_perso.y = pM.position_perso.y;
+
+    chiffres[1] = IMG_Load("img/1.png");
+    chiffres[2] = IMG_Load("img/2.png");
+    chiffres[3] = IMG_Load("img/3.png");
+    chiffres[4] = IMG_Load("img/4.png");
+    chiffres[5] = IMG_Load("img/5.png");
+    chiffres[6] = IMG_Load("img/6.png");
+    chiffres[7] = IMG_Load("img/7.png");
+    chiffres[8] = IMG_Load("img/8.png");
+    chiffres[9] = IMG_Load("img/9.png");
+    chiffres[10] = IMG_Load("img/10.png");
+    chiffres[11] = IMG_Load("img/11.png");
+    chiffres[12] = IMG_Load("img/12.png");
+    chiffres[13] = IMG_Load("img/13.png");
+
+    while (continuer)
+    {
+
+        SDL_BlitSurface(imageDeFond, NULL, screen, &position_BG);
+        afficherminimap(m, screen);
+        SDL_BlitSurface(p.sprite, NULL, screen, &p.position_perso);
+        SDL_BlitSurface(pM.sprite, NULL, screen, &pM.position_perso);
+        afficher_temps(&t, screen);
+
+        //mapCollision(Hero *entity);
+        while (SDL_PollEvent(&event))
         {
-            switch(event.type)
+            switch (event.type)
             {
             case SDL_QUIT:
-                continuer=0;
+                continuer = 0;
                 break;
-
             case SDL_KEYDOWN:
-                switch(event.key.keysym.sym)
+                switch (event.key.keysym.sym)
                 {
-                    tempsDebut=SDL_GetTicks();
+                case SDLK_ESCAPE:
+                    continuer = 0;
+                    break;
                 case SDLK_RIGHT:
-                    posJoueur.x+=10;
-                    m.pos_bonhoe=MAJMinimap(posJoueur,dimension);
-                    afficherminimap(m,ecran);
+                    pMprochaine.position_perso.x += distance;
+                    if (collisionPP(pMprochaine, masked) == 0)
+                    { position_camera.x=0;
+ 
+                        pM.position_perso.x = pMprochaine.position_perso.x;
+                        
+                        majminimap(&p,&m,position_camera,redimensionnement);
+                    }
+                    else
+                    {  if (i==13)
+                          i=0; 
+                        i++;
+                        pMprochaine.position_perso.x = pM.position_perso.x;
+                        SDL_BlitSurface(chiffres[i], NULL, screen, &pM.position_perso);
+                        SDL_Delay(300);
+                    }
                     break;
 
                 case SDLK_LEFT:
-                    posJoueur.x-=10;
-                    m.pos_bonhoe=MAJMinimap(posJoueur,dimension);
-                    afficherminimap(m,ecran);
-                    break;
-                }
+                    pMprochaine.position_perso.x -= distance;
+                    if (collisionPP(pMprochaine, masked) == 0)
+                    {   position_camera.x=1;
+                        pM.position_perso.x = pMprochaine.position_perso.x;
+                        majminimap(&p,&m,position_camera,redimensionnement);
+                    }
+                    else
+                    {  if (i==13)
+                          i=0;
+                        i++;
+                        pMprochaine.position_perso.x = pM.position_perso.x;
+                        SDL_BlitSurface(chiffres[i], NULL, screen, &pM.position_perso);
+                        SDL_Delay(300);
+                    }
                 break;
+
+
+                    case SDLK_DOWN:
+                    pMprochaine.position_perso.y += distance;
+                    if (collisionPP(pMprochaine, masked) == 0)
+                    {
+                        position_camera.x=2;
+                        pM.position_perso.y = pMprochaine.position_perso.y;
+                        majminimap(&p,&m,position_camera,redimensionnement);
+                    }
+                    else
+                    {  if (i==13)
+                          i=0;
+                        i++;
+                        pMprochaine.position_perso.y = pM.position_perso.y;
+                        SDL_BlitSurface(chiffres[i], NULL, screen, &pM.position_perso);
+                        SDL_Delay(300);
+                    }
+                    break;
+
+
+
+                case SDLK_UP:
+                    pMprochaine.position_perso.y -= distance;
+                    if (collisionPP(pMprochaine, masked) == 0)
+                    {   position_camera.x=3;
+                        pM.position_perso.y = pMprochaine.position_perso.y;
+                        majminimap(&p,&m,position_camera,redimensionnement);
+                    }
+                    else
+                    {   if (i==13)
+                          i=0;
+                        i++;
+                        pMprochaine.position_perso.y = pM.position_perso.y;
+                        SDL_BlitSurface(chiffres[i], NULL, screen, &pM.position_perso);
+                        SDL_Delay(300);
+                    }
+
+                    break;
+
+                case SDLK_p:
+                    imageDeFond = IMG_Load("map1_masked.png");
+                    break;
+                case SDLK_o:
+                  imageDeFond = IMG_Load("map1.png");
+
+                }
+                
             }
         }
-
-        affichertemps(&tempsDebut);
-SDL_Flip(ecran);
-SDL_Delay(6000);
+        SDL_Flip(screen);
     }
-    Liberer(&m);
-    SDL_FreeSurface(background_joueur);
-    SDL_FreeSurface(texteTemps);
-    SDL_FreeSurface(background_jeu);
+    free_minimap(&m);
+    SDL_FreeSurface(p.sprite);
+    SDL_FreeSurface(chiffres[1]);
+    SDL_FreeSurface(chiffres[2]);
+    SDL_FreeSurface(chiffres[3]);
+    SDL_FreeSurface(chiffres[4]);
+    SDL_FreeSurface(chiffres[5]);
+    SDL_FreeSurface(chiffres[6]);
+    SDL_FreeSurface(chiffres[7]);
+    SDL_FreeSurface(chiffres[8]);
+    SDL_FreeSurface(chiffres[9]);
+    SDL_FreeSurface(chiffres[10]);
+    SDL_FreeSurface(chiffres[11]);
+    SDL_FreeSurface(chiffres[12]);
+    SDL_FreeSurface(chiffres[13]);
+    free_temps(&t, screen);
+    SDL_FreeSurface(screen);
+    TTF_Quit();
     SDL_Quit();
-    return 0;
+    return EXIT_SUCCESS;
 }
-
